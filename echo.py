@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from collections.abc import MutableSequence
 from contextlib import redirect_stdout
 from io import StringIO
 from typing import NamedTuple
-from typing import NoReturn
 
 from litellm import completion
 from rich.console import Console
@@ -26,14 +26,22 @@ is executed is contained in markdown code blocks of the form
 # code goes here
 ```
 
-The User will then be able to authorize the execution of the code.
-
-If the user does not authorize the execution of the code you will simply
-get "ABORTED" as a result. If the code is executed you will get the
-stdout of the above code.
-
 Dont add python code blocks to your response unless you want to execute them.
+If it makes sense you should use code to find the answer to the question.
+Make Your answer as brief as possible.
+If not absolutely necessary say nothing else than the code.
 """
+
+RESPONSE_PROMPT = """\
+the stdout of the code above was:
+
+```
+****
+```
+
+I should quickly explain the answer I got...
+"""
+
 PYTHON_CODE_BLOCK = "```python\n"
 CODE_BLOCK = "```\n"
 
@@ -63,8 +71,8 @@ def initialize_chat() -> list[Message]:
     return [prompt]
 
 
-def parse_code(message: Message) -> str | None:
-    content = message.content
+def _parse_code(message: Message) -> str | None:
+    content = message.content + "\n"
     try:
         content = content.split(PYTHON_CODE_BLOCK)[1]
         return content.split(CODE_BLOCK)[0]
@@ -72,7 +80,7 @@ def parse_code(message: Message) -> str | None:
         return None
 
 
-def run_code(code: str) -> str:
+def _exec_code(code: str) -> str:
     stdout = StringIO()
     with redirect_stdout(stdout):
         try:
@@ -82,42 +90,26 @@ def run_code(code: str) -> str:
     return stdout.getvalue()
 
 
-def handle_code(code: str) -> Message:
+def handle_code(code: str) -> Message | None:
     styled("\nPYTHON CODE DETECTED\n", style="bold red")
     styled(f"{PYTHON_CODE_BLOCK}{code}{CODE_BLOCK}\n", style="red")
-    styled("EXECUTE CODE? (y/n)", style="bold red")
-    answer = input()
-    if answer == "y":
-        styled("EXECUTING CODE\n", style="bold red")
-        result = run_code(code)
+    styled("EXECUTE CODE? (y/n): ", style="bold red")
+
+    if input() in ["y", "Y"]:
+        styled("EXECUTING CODE...\n", style="bold red")
+        result = _exec_code(code)
+        wrapped = RESPONSE_PROMPT.replace("****", result)
+        styled(wrapped, style="red")
+        return Message(content=wrapped, role="assistant")
     else:
-        result = "ABORTED"
-
-    wrapped = f"{CODE_BLOCK}{result}{CODE_BLOCK}\n"
-    styled(wrapped, style="red")
-
-    return Message(content=wrapped, role="system")
+        return None
 
 
-def styled(contents: str, style: str) -> None:
-    console.print(contents, style=style, end="")
-    return None
-
-
-def main() -> NoReturn:
-    styled("Welcome to Echo!\n\n", style="bold blue")
-
-    chat = initialize_chat()
+def reply_loop(chat: MutableSequence[Message]) -> None:
     while True:
-        styled("> ", style="bold green")
-        promp = input()
-
-        message = Message(content=promp, role="user")
-        chat.append(message)
-
         styled("Echo: ", style="bold blue")
         response = ""
-        for text in generate(chat):
+        for text in generate(list(chat)):
             styled(text, style="blue")
             response += text
         styled("\n", style="blue")
@@ -125,11 +117,37 @@ def main() -> NoReturn:
         message = Message(content=response, role="assistant")
         chat.append(message)
 
-        # find python code
-        code = parse_code(message)
+        code = _parse_code(message)
         if code is not None:
             message = handle_code(code)
+            if message is None:
+                break
             chat.append(message)
+        else:
+            break
+
+
+def styled(contents: str, style: str) -> None:
+    console.print(contents, style=style, end="")
+    return None
+
+
+def main() -> int:
+    styled("Welcome to Echo!\n\n", style="bold blue")
+
+    chat = initialize_chat()
+    try:
+        while True:
+            styled("> ", style="bold green")
+            promp = input()
+
+            message = Message(content=promp, role="user")
+            chat.append(message)
+            reply_loop(chat)
+
+    except KeyboardInterrupt:
+        styled("\n\nGoodbye!\n", style="bold blue")
+        return 0
 
 
 if __name__ == "__main__":
