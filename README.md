@@ -1,6 +1,8 @@
 WARNING: DO NOT RUN UNTRUSTED CODE. CHECK CODE THAT ECHO GENERATES BEFORE EXECUTING IT.
 
-![echo](https://github.com/DominiqueGarmier/echo/assets/42445422/80610a3f-f7c9-49e5-b377-865f28ab832e)
+<p align="center">
+  <img src="https://github.com/DominiqueGarmier/echo/assets/42445422/80610a3f-f7c9-49e5-b377-865f28ab832e" alt="echo"/>
+</p>
 
 # echo
 
