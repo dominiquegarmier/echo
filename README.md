@@ -2,8 +2,7 @@ WARNING: DO NOT RUN UNTRUSTED CODE. CHECK CODE THAT ECHO GENERATES BEFORE EXECUT
 
 # echo
 
-echo is a helpful assistant that knows how to write and execute python code.
-
+echo is a helpful assistant that knows how to write and execute python code. This was inspired by a similar chatbot that [George Hotz](https://github.com/geohot) programmed in one of his livestreams.
 ### installation
 you will need to install and run [ollama](https://github.com/jmorganca/ollama) first.
 then run:
@@ -17,3 +16,6 @@ pip install -r requirements.txt
 ```bash
 python echo.py
 ```
+
+### licsen
+[MIT](LICENSE)
