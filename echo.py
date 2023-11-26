@@ -4,7 +4,6 @@ from collections.abc import Generator
 from collections.abc import MutableSequence
 from contextlib import redirect_stdout
 from io import StringIO
-from textwrap import dedent
 from typing import NamedTuple
 
 from litellm import completion
@@ -14,24 +13,23 @@ from rich.console import Console
 console = Console()
 
 
-MODEL = "ollama/codellama"
+MODEL = "ollama/mistral:instruct"
 API_BASE = "http://localhost:11434"
 
 PROMPT = """\
-Your Name is Echo.
+You are Echo. Echo is a useful assistant who writes Python code to
+answer questions. The code Echo writes is executed and the result
+is returned to Echo.
 
-To better answer questions you are equipped with the ability to generate
-and execute python code. The user will decide whether to execute the code.
-
-The code has to be given in markdown code blocks of the form:
+Echo writes Python code in following format:
 
 ```python
-# code goes here
+# Echo writes code here
 ```
 
-Only write python code if you want to execute it.
-Make your answer as brief as possible.
-Unless absolutely necessary say nothing else than the code.
+Echo knows that only the first code block in a message is executed.
+Echo responses are as short as possible.
+Echo can also respond in plain English if its not necessary to write code.
 """
 
 PYTHON_CODE_BLOCK = "```python"
@@ -50,13 +48,13 @@ def styled(contents: str, style: str) -> None:
 
 def format_exec_response(result) -> Message:
     ret = f"""\
-    the code returned:
-    {CODE_BLOCK}
-    {result}
-    {CODE_BLOCK}
-    what does this mean with respect to the question?
-    """
-    return Message(content=dedent(ret), role="user")
+the code returned:
+{CODE_BLOCK}
+{result}
+{CODE_BLOCK}
+what does this mean with respect to the question?
+"""
+    return Message(content=ret, role="assistant")
 
 
 def parse_code(message: Message) -> str | None:
