@@ -13,7 +13,8 @@ from rich.console import Console
 console = Console()
 
 
-MODEL = "ollama/mistral:instruct"
+# MODEL = "ollama/mistral:instruct"
+MODEL = "ollama/neural-chat"
 API_BASE = "http://localhost:11434"
 
 PROMPT = """\
