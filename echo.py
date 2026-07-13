@@ -9,7 +9,6 @@ from typing import NamedTuple
 from litellm import completion
 from rich.console import Console
 
-
 console = Console()
 
 
@@ -90,7 +89,7 @@ def handle_code(code: str) -> tuple[Message, bool]:
         return format_exec_response(err), True
 
 
-def generate(chat: list[Message]) -> Generator[str, None, None]:
+def generate(chat: list[Message]) -> Generator[str]:
     messages = [{"content": m.content, "role": m.role} for m in chat]
     response = completion(
         model="ollama/llama2",
